@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Недвижимость</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #fff;
+      color: #000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px 16px 80px;
+      line-height: 1.5;
+    }
+
+    #splash {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+    .splash-logo {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      margin-bottom: 24px;
+    }
+    .splash-text {
+      color: #888;
+      font-size: 16px;
+    }
+
+    .page { display: none; }
+    .active { display: block; }
+
+    .card {
+      background: #f9f9f9;
+      padding: 16px;
+      border-radius: 12px;
+      margin: 12px 0;
+    }
+
+    .search-box {
+      position: relative;
+      margin: 16px 0 24px;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    .banner {
+      text-align: center;
+      margin: 24px 0;
+    }
+    .banner img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 12px;
+    }
+    .banner-text {
+      margin-top: 10px;
+      font-weight: 600;
+      color: #e74c3c;
+      font-size: 16px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0 12px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .view-all-btn {
+      background: #007aff;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .offers-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .offer-card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      text-align: center;
+      font-size: 13px;
+    }
+    .offer-card img {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      background: #fff;
+      border-top: 1px solid #eee;
+      padding: 12px 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .nav-btn.active { color: #007aff; }
+    .nav-icon { font-size: 20px; }
+
+    .property {
+      display: flex;
+      gap: 12px;
+      margin: 12px 0;
+      align-items: flex-start;
+    }
+    .property img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .property-info { flex: 1; }
+    .btn {
+      background: #007aff;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .btn-remove {
+      background: #ff3b30;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<div id="splash">
+  <img src="https://i.ibb.co/xKZ1hC1j/Dt-L73-Ny-XFi8-Gj0c-Np5-Zr-ZQni2c-QXIXMubb9j-U-kj-Io-Z9q-Nj-ukw-RQ3f4-Bb-Bp-CWLox-B4pm-Fso-Gh-Hz-Go-Xqb.jpg" class="splash-logo" alt="Логотип">
+  <div class="splash-text">Загрузка...</div>
+</div>
+
+<div id="home" class="page">
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Поиск по объектам...">
+  </div>
+
+  <div class="banner">
+    <img src="https://i.ibb.co/rSvtVFY/j63jvsdndcc71zqold2r6jhwg9czqdx9.jpg" alt="Акция">
+    <div class="banner-text">🔥 Только этой неделей — особые условия!</div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">🔥 Горячие предложения</div>
+    <button class="view-all-btn" onclick="goToCatalog()">Смотреть подробнее</button>
+  </div>
+  <div class="offers-grid" id="hotOffers"></div>
+
+  <div class="banner">
+    <img src="https://i.ibb.co/rSvtVFY/j63jvsdndcc71zqold2r6jhwg9czqdx9.jpg" alt="Специальное предложение">
+    <div class="banner-text">🏆 Лучшие объекты месяца — только для вас!</div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">🏆 Хиты продаж</div>
+    <button class="view-all-btn" onclick="goToCatalog()">Смотреть подробнее</button>
+  </div>
+  <div class="offers-grid" id="hitOffers"></div>
+</div>
+
+<div id="catalog" class="page">
+  <div id="catalog-list">Загрузка...</div>
+</div>
+
+<div id="favorites" class="page">
+  <div class="card">
+    <h3>Избранное</h3>
+    <div id="fav-list">Нет сохранённых объектов</div>
+  </div>
+</div>
+
+<div id="profile" class="page">
+  <div class="card" style="text-align: center; padding: 24px;">
+    <img id="user-photo" src="https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
+         alt="Аватар" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 16px;">
+    <div id="user-info">Загрузка...</div>
+  </div>
+  <div class="card">
+    <h3>История просмотров</h3>
+    <div id="history-list">Нет просмотров</div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-btn active" onclick="show('home')">
+    <div class="nav-icon">🏠</div>
+    <span>Главная</span>
+  </button>
+  <button class="nav-btn" onclick="show('catalog')">
+    <div class="nav-icon">🏘️</div>
+    <span>Каталог</span>
+  </button>
+  <button class="nav-btn" onclick="show('favorites')">
+    <div class="nav-icon">❤️</div>
+    <span>Избранное</span>
+  </button>
+  <button class="nav-btn" onclick="show('profile')">
+    <div class="nav-icon">👤</div>
+    <span>Профиль</span>
+  </button>
+</div>
+
+<script>
+  let isSearching = false;
+  let allAds = [];
+
+  // === API URL (замените на ваш ngrok или хостинг в продакшене) ===
+  const API_BASE = 'http://localhost:8000';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      document.getElementById('splash').style.opacity = '0';
+      setTimeout(() => {
+        document.getElementById('splash').style.display = 'none';
+        show('home');
+        loadAllAds();
+      }, 300);
+    }, 1000);
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('focus', () => {
+      if (!isSearching) {
+        isSearching = true;
+        show('catalog');
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      const searchBox = document.querySelector('.search-box');
+      const bottomNav = document.querySelector('.bottom-nav');
+      if (!searchBox.contains(e.target) && !bottomNav.contains(e.target)) {
+        if (isSearching && document.getElementById('catalog').classList.contains('active')) {
+          setTimeout(() => {
+            if (document.activeElement !== searchInput) {
+              isSearching = false;
+              show('home');
+            }
+          }, 150);
+        }
+      }
+    });
+  });
+
+  async function loadAllAds() {
+    try {
+      const res = await fetch(`${API_BASE}/ads/`);
+      allAds = await res.json();
+      renderHomePreviews();
+      renderCatalog();
+    } catch (err) {
+      console.error("Ошибка загрузки объявлений:", err);
+    }
+  }
+
+  function renderHomePreviews() {
+    const hotEl = document.getElementById('hotOffers');
+    const hitEl = document.getElementById('hitOffers');
+
+    // Просто берём первые 2 как "горячие", следующие 2 как "хиты"
+    const hot = allAds.slice(0, 2);
+    const hit = allAds.slice(2, 4);
+
+    hotEl.innerHTML = hot.map(ad => `
+      <div class="offer-card">
+        <img src="${API_BASE}${ad.photo_url}" alt="${ad.title}">
+        <div>${ad.title}</div>
+        <div>${ad.price}</div>
+      </div>
+    `).join('');
+
+    hitEl.innerHTML = hit.map(ad => `
+      <div class="offer-card">
+        <img src="${API_BASE}${ad.photo_url}" alt="${ad.title}">
+        <div>${ad.title}</div>
+        <div>${ad.price}</div>
+      </div>
+    `).join('');
+  }
+
+  function renderCatalog() {
+    const list = document.getElementById('catalog-list');
+    if (allAds.length === 0) {
+      list.innerHTML = '<div>Нет объявлений</div>';
+      return;
+    }
+    list.innerHTML = allAds.map(ad => `
+      <div class="property">
+        <img src="${API_BASE}${ad.photo_url}" alt="${ad.title}">
+        <div class="property-info">
+          <strong>${ad.title}</strong><br>
+          <span>${ad.price}</span><br>
+          <button class="btn" onclick="save(${ad.id})">❤️ Сохранить</button>
+          <button class="btn" onclick="view(${ad.id})" style="background:#5ac8fa;">👁️ Просмотреть</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function show(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    const targetBtn = Array.from(document.querySelectorAll('.nav-btn')).find(btn => {
+      const onclick = btn.getAttribute('onclick');
+      return onclick && onclick.includes(`show('${pageId}')`);
+    });
+    if (targetBtn) targetBtn.classList.add('active');
+
+    if (pageId === 'catalog') {
+      renderCatalog();
+    }
+    if (pageId === 'favorites') renderFavorites();
+    if (pageId === 'profile') renderHistory();
+  }
+
+  function goToCatalog() {
+    show('catalog');
+  }
+
+  // === Telegram WebApp ===
+  const WebApp = window.Telegram.WebApp;
+  WebApp.expand();
+  WebApp.ready();
+
+  const user = WebApp.initDataUnsafe?.user;
+  let favorites = JSON.parse(localStorage.getItem('fav') || '[]');
+  let history = JSON.parse(localStorage.getItem('history') || '[]');
+
+  if (user) {
+    document.getElementById('user-info').innerHTML = `
+      <strong>${user.first_name || ''} ${user.last_name || ''}</strong><br>
+      @${user.username || '—'}<br>
+      ID: ${user.id}
+    `;
+    if (user.photo_url) {
+      document.getElementById('user-photo').src = user.photo_url;
+    }
+  } else {
+    document.getElementById('user-info').textContent = 'Не запущено из Telegram';
+  }
+
+  function save(id) {
+    if (!favorites.includes(id)) {
+      favorites.push(id);
+      localStorage.setItem('fav', JSON.stringify(favorites));
+      alert('Сохранено в избранное!');
+    }
+  }
+
+  function remove(id) {
+    favorites = favorites.filter(i => i !== id);
+    localStorage.setItem('fav', JSON.stringify(favorites));
+    renderFavorites();
+  }
+
+  function view(id) {
+    if (!history.includes(id)) {
+      history.unshift(id);
+      if (history.length > 10) history.pop();
+      localStorage.setItem('history', JSON.stringify(history));
+    }
+    alert('Объект добавлен в историю просмотров');
+  }
+
+  function renderFavorites() {
+    const list = document.getElementById('fav-list');
+    const favItems = favorites.map(id => allAds.find(ad => ad.id === id)).filter(Boolean);
+    if (favItems.length === 0) {
+      list.textContent = 'Нет сохранённых объектов';
+      return;
+    }
+    list.innerHTML = favItems.map(item => `
+      <div class="property">
+        <img src="${API_BASE}${item.photo_url}" alt="">
+        <div class="property-info">
+          <strong>${item.title}</strong><br>
+          ${item.price}<br>
+          <button class="btn btn-remove" onclick="remove(${item.id})">🗑️ Удалить</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('history-list');
+    const histItems = history.map(id => allAds.find(ad => ad.id === id)).filter(Boolean);
+    if (histItems.length === 0) {
+      list.textContent = 'Нет просмотров';
+      return;
+    }
+    list.innerHTML = histItems.map(item => `
+      <div class="property">
+        <img src="${API_BASE}${item.photo_url}" alt="">
+        <div class="property-info">
+          <strong>${item.title}</strong><br>
+          ${item.price}
+        </div>
+      </div>
+    `).join('');
+  }
+</script>
+
+</body>
+</html>
