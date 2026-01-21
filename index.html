@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Недвижимость</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #fff;
+      color: #000;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      padding: 20px 16px 80px;
+      line-height: 1.5;
+    }
+
+    /* SPLASH */
+    #splash {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 999999;
+    }
+    .splash-logo {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      margin-bottom: 24px;
+      animation: bounce 1.4s infinite ease-in-out;
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+    .splash-text {
+      color: #888;
+      font-size: 16px;
+    }
+
+    .page { display: none; }
+    .active { display: block; }
+
+    .card {
+      background: #f9f9f9;
+      padding: 16px;
+      border-radius: 12px;
+      margin: 12px 0;
+    }
+
+    .search-box input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    /* СЛАЙДЕР БАННЕРА */
+    .banner {
+      text-align: center;
+      margin: 24px 0;
+      position: relative;
+    }
+    .banner-slides {
+      display: flex;
+      width: 100%;
+      height: 120px;
+      overflow: hidden;
+      border-radius: 12px;
+    }
+    .banner-slide {
+      min-width: 100%;
+      height: 100%;
+      transition: transform 0.5s ease-in-out;
+    }
+    .banner-slide img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .banner-text {
+      margin-top: 10px;
+      font-weight: 600;
+      color: #e74c3c;
+      font-size: 16px;
+    }
+
+    /* ТОЧКИ ИНДИКАТОРЫ */
+    .banner-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .banner-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ccc;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .banner-dot.active {
+      background: #e74c3c;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 20px 0 12px;
+    }
+    .section-title {
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .view-all-btn {
+      background: #007aff;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .offers-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .offer-card {
+      background: #fff;
+      border: 1px solid #eee;
+      border-radius: 10px;
+      overflow: hidden;
+      text-align: center;
+      font-size: 13px;
+    }
+    .offer-card img {
+      width: 100%;
+      height: 80px;
+      object-fit: contain;
+      background: #f9f9f9;
+      display: block;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      background: #fff;
+      border-top: 1px solid #eee;
+      padding: 12px 0;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+    }
+    .nav-btn {
+      background: none;
+      border: none;
+      color: #888;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .nav-btn.active { color: #007aff; }
+    .nav-icon { font-size: 20px; }
+
+    .property {
+      display: flex;
+      gap: 12px;
+      margin: 12px 0;
+      align-items: flex-start;
+    }
+    .property img {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .property-info { flex: 1; }
+    .btn {
+      background: #007aff;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 6px;
+    }
+    .btn-remove {
+      background: #ff3b30;
+      padding: 6px 10px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div id="splash">
+  <img src="https://i.ibb.co/xKZ1hC1j/Dt-L73-Ny-XFi8-Gj0c-Np5-Zr-ZQni2c-QXIXMubb9j-U-kj-Io-Z9q-Nj-ukw-RQ3f4-Bb-Bp-CWLox-B4pm-Fso-Gh-Hz-Go-Xqb.jpg" class="splash-logo" alt="Логотип">
+  <div class="splash-text">Загрузка...</div>
+</div>
+
+<!-- ГЛАВНАЯ -->
+<div id="home" class="page">
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Поиск по объектам...">
+  </div>
+
+  <!-- АНИМИРОВАННЫЙ СЛАЙДЕР -->
+  <div class="banner">
+    <div class="banner-slides" id="bannerSlides">
+      <!-- Слайды будут добавлены через JS -->
+    </div>
+    <div class="banner-dots" id="bannerDots"></div>
+    <div class="banner-text">🔥 Только этой неделей — особые условия!</div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">🔥 Горячие предложения</div>
+    <button class="view-all-btn" onclick="show('catalog')">Смотреть подробнее</button>
+  </div>
+  <div class="offers-grid" id="hotOffers"></div>
+
+  <div class="section-header">
+    <div class="section-title">🏆 Хиты продаж</div>
+    <button class="view-all-btn" onclick="show('catalog')">Смотреть подробнее</button>
+  </div>
+  <div class="offers-grid" id="hitOffers"></div>
+</div>
+
+<!-- ОСТАЛЬНЫЕ СТРАНИЦЫ -->
+<div id="catalog" class="page">
+  <div id="catalog-list"></div>
+</div>
+
+<div id="favorites" class="page">
+  <div class="card">
+    <h3>Избранное</h3>
+    <div id="fav-list">Нет сохранённых объектов</div>
+  </div>
+</div>
+
+<div id="profile" class="page">
+  <div class="card" style="text-align: center; padding: 24px;">
+    <img id="user-photo" src="https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
+         alt="Аватар" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 16px;">
+    <div id="user-info">Загрузка...</div>
+  </div>
+  <div class="card">
+    <h3>История просмотров</h3>
+    <div id="history-list">Нет просмотров</div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="nav-btn" onclick="show('home')">
+    <div class="nav-icon">🏠</div><span>Главная</span>
+  </button>
+  <button class="nav-btn" onclick="show('catalog')">
+    <div class="nav-icon">🏘️</div><span>Каталог</span>
+  </button>
+  <button class="nav-btn" onclick="show('favorites')">
+    <div class="nav-icon">❤️</div><span>Избранное</span>
+  </button>
+  <button class="nav-btn" onclick="show('profile')">
+    <div class="nav-icon">👤</div><span>Профиль</span>
+  </button>
+</div>
+
+<script>
+  // === ТЕСТОВЫЕ ОБЪЯВЛЕНИЯ ===
+  const ALL_ADS = [
+    { id: 1, title: "2-комн. квартира в центре", price: "9 500 000 ₽" },
+    { id: 2, title: "Новостройка у метро", price: "12 300 000 ₽" },
+    { id: 3, title: "Квартира с ремонтом", price: "8 200 000 ₽" },
+    { id: 4, title: "Просторная 3-комнатная", price: "15 000 000 ₽" },
+    { id: 5, title: "Квартира-студия", price: "5 900 000 ₽" },
+    { id: 6, title: "Элитный пентхаус", price: "45 000 000 ₽" }
+  ];
+
+  // === КАРТИНКИ ДЛЯ СЛАЙДЕРА ===
+  const BANNER_IMAGES = [
+    "https://i.ibb.co/rSvtVFY/j63jvsdndcc71zqold2r6jhwg9czqdx9.jpg",
+    "https://i.ibb.co/xKZ1hC1j/Dt-L73-Ny-XFi8-Gj0c-Np5-Zr-ZQni2c-QXIXMubb9j-U-kj-Io-Z9q-Nj-ukw-RQ3f4-Bb-Bp-CWLox-B4pm-Fso-Gh-Hz-Go-Xqb.jpg"
+    // Добавьте больше при желании
+  ];
+
+  let favorites = JSON.parse(localStorage.getItem('fav') || '[]');
+  let history = JSON.parse(localStorage.getItem('history') || '[]');
+  let currentSlide = 0;
+  let slideInterval;
+
+  // === ИНИЦИАЛИЗАЦИЯ СЛАЙДЕРА ===
+  function initBannerSlider() {
+    const slidesContainer = document.getElementById('bannerSlides');
+    const dotsContainer = document.getElementById('bannerDots');
+
+    // Создаём слайды
+    slidesContainer.innerHTML = BANNER_IMAGES.map(src => `
+      <div class="banner-slide">
+        <img src="${src}" alt="Баннер">
+      </div>
+    `).join('');
+
+    // Создаём точки
+    dotsContainer.innerHTML = BANNER_IMAGES.map((_, i) => `
+      <div class="banner-dot" data-index="${i}"></div>
+    `).join('');
+
+    // Обновляем активный слайд
+    updateBanner();
+
+    // Клик по точкам
+    dotsContainer.querySelectorAll('.banner-dot').forEach(dot => {
+      dot.addEventListener('click', () => {
+        currentSlide = parseInt(dot.getAttribute('data-index'));
+        updateBanner();
+        resetInterval();
+      });
+    });
+
+    // Автосмена
+    startAutoSlide();
+  }
+
+  function updateBanner() {
+    const slidesContainer = document.getElementById('bannerSlides');
+    const dots = document.querySelectorAll('.banner-dot');
+
+    // Свайп влево: transform = -currentSlide * 100%
+    slidesContainer.style.transform = `translateX(-${currentSlide * 100}%)`;
+
+    // Обновляем точки
+    dots.forEach((dot, i) => {
+      dot.classList.toggle('active', i === currentSlide);
+    });
+  }
+
+  function nextSlide() {
+    currentSlide = (currentSlide + 1) % BANNER_IMAGES.length;
+    updateBanner();
+  }
+
+  function startAutoSlide() {
+    clearInterval(slideInterval);
+    slideInterval = setInterval(nextSlide, 3000);
+  }
+
+  function resetInterval() {
+    clearInterval(slideInterval);
+    startAutoSlide();
+  }
+
+  // === РЕНДЕР ОСТАЛЬНОГО ===
+  function renderHomePreviews() {
+    const hotEl = document.getElementById('hotOffers');
+    const hitEl = document.getElementById('hitOffers');
+
+    const hot = ALL_ADS.slice(0, 2);
+    const hit = ALL_ADS.slice(2, 4);
+
+    const card = (ad) => `
+      <div class="offer-card">
+        <img src="${BANNER_IMAGES[0]}" alt="${ad.title}">
+        <div>${ad.title}</div>
+        <div>${ad.price}</div>
+      </div>
+    `;
+
+    hotEl.innerHTML = hot.map(card).join('');
+    hitEl.innerHTML = hit.map(card).join('');
+  }
+
+  function renderCatalog() {
+    const list = document.getElementById('catalog-list');
+    list.innerHTML = ALL_ADS.map(ad => `
+      <div class="property">
+        <img src="${BANNER_IMAGES[0]}" alt="${ad.title}">
+        <div class="property-info">
+          <strong>${ad.title}</strong><br>
+          <span>${ad.price}</span><br>
+          <button class="btn" onclick="save(${ad.id})">❤️ Сохранить</button>
+          <button class="btn" onclick="view(${ad.id})" style="background:#5ac8fa;">👁️ Просмотреть</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderFavorites() {
+    const list = document.getElementById('fav-list');
+    const items = favorites.map(id => ALL_ADS.find(ad => ad.id === id)).filter(Boolean);
+    if (items.length === 0) {
+      list.textContent = 'Нет сохранённых объектов';
+      return;
+    }
+    list.innerHTML = items.map(item => `
+      <div class="property">
+        <img src="${BANNER_IMAGES[0]}" alt="">
+        <div class="property-info">
+          <strong>${item.title}</strong><br>
+          ${item.price}<br>
+          <button class="btn btn-remove" onclick="remove(${item.id})">🗑️ Удалить</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderHistory() {
+    const list = document.getElementById('history-list');
+    const items = history.map(id => ALL_ADS.find(ad => ad.id === id)).filter(Boolean);
+    if (items.length === 0) {
+      list.textContent = 'Нет просмотров';
+      return;
+    }
+    list.innerHTML = items.map(item => `
+      <div class="property">
+        <img src="${BANNER_IMAGES[0]}" alt="">
+        <div class="property-info">
+          <strong>${item.title}</strong><br>
+          ${item.price}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // === ФУНКЦИИ ===
+  function save(id) {
+    if (!favorites.includes(id)) {
+      favorites.push(id);
+      localStorage.setItem('fav', JSON.stringify(favorites));
+      alert('Сохранено в избранное!');
+      renderFavorites();
+    }
+  }
+
+  function remove(id) {
+    favorites = favorites.filter(i => i !== id);
+    localStorage.setItem('fav', JSON.stringify(favorites));
+    renderFavorites();
+  }
+
+  function view(id) {
+    if (!history.includes(id)) {
+      history.unshift(id);
+      if (history.length > 10) history.pop();
+      localStorage.setItem('history', JSON.stringify(history));
+      renderHistory();
+    }
+    alert('Добавлено в историю');
+  }
+
+  function show(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+    const buttons = document.querySelectorAll('.nav-btn');
+    for (let btn of buttons) {
+      if (btn.getAttribute('onclick')?.includes(`show('${pageId}')`)) {
+        btn.classList.add('active');
+        break;
+      }
+    }
+
+    if (pageId === 'favorites') renderFavorites();
+    if (pageId === 'profile') renderHistory();
+  }
+
+  // === TELEGRAM ===
+  function initTelegram() {
+    try {
+      const WebApp = window.Telegram.WebApp;
+      WebApp.expand();
+      WebApp.ready();
+
+      const user = WebApp.initDataUnsafe?.user;
+      if (user) {
+        document.getElementById('user-info').innerHTML = `
+          <strong>${user.first_name || ''} ${user.last_name || ''}</strong><br>
+          @${user.username || '—'}<br>
+          ID: ${user.id}
+        `;
+        if (user.photo_url) {
+          document.getElementById('user-photo').src = user.photo_url;
+        }
+      } else {
+        document.getElementById('user-info').textContent = 'Не запущено из Telegram';
+      }
+    } catch (e) {
+      document.getElementById('user-info').textContent = 'Режим разработки';
+    }
+  }
+
+  // === ЗАПУСК ===
+  function startApp() {
+    initTelegram();
+    renderHomePreviews();
+    renderCatalog();
+    initBannerSlider(); // ИНИЦИАЛИЗАЦИЯ СЛАЙДЕРА
+
+    setTimeout(() => {
+      const splash = document.getElementById('splash');
+      if (splash) splash.remove();
+      show('home');
+    }, 5000);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', startApp);
+  } else {
+    startApp();
+  }
+
+  document.getElementById('searchInput')?.addEventListener('focus', () => {
+    show('catalog');
+  });
+</script>
+</body>
+</html>
