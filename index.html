@@ -1,0 +1,1794 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<title>Недвижимость</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+--primary: #1E3A8A;
+--primary-dark: #1E3A8A;
+--secondary: #BFDBFE;
+--accent: #D4AF37;
+--text: #000000;
+--bg: #FFFFFF;
+--border: #E2E8F0;
+--text-secondary: #64748B;
+}
+body {
+background: var(--bg);
+color: var(--text);
+font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+padding: 20px 16px 90px;
+line-height: 1.5;
+position: relative;
+overflow-x: hidden;
+touch-action: manipulation;
+}
+/* SPLASH */
+#splash {
+position: fixed;
+top: 0; left: 0; right: 0; bottom: 0;
+background: var(--bg);
+display: flex;
+flex-direction: column;
+justify-content: center;
+align-items: center;
+z-index: 999999;
+opacity: 1;
+transition: opacity 0.6s ease;
+}
+.splash-logo {
+width: 100px;
+height: 100px;
+object-fit: cover;
+margin-bottom: 24px;
+animation: bounce 1.4s infinite ease-in-out;
+}
+@keyframes bounce {
+0%, 100% { transform: translateY(0); }
+50% { transform: translateY(-20px); }
+}
+.splash-text {
+color: var(--text-secondary);
+font-size: 16px;
+font-weight: 500;
+text-align: center;
+}
+.hammer-anim {
+display: inline-block;
+animation: hammerTap 1.4s infinite ease-in-out;
+}
+@keyframes hammerTap {
+0%, 100% { transform: translateY(0) rotate(0); }
+30% { transform: translateY(6px) rotate(5deg); }
+50% { transform: translateY(0) rotate(0); }
+}
+.page {
+display: none;
+opacity: 0;
+transform: translateY(20px);
+animation: pageEnter 0.8s forwards cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.active {
+display: block;
+}
+@keyframes pageEnter {
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+/* === КАРТОЧКИ === */
+.card-item {
+background: var(--bg);
+border-radius: 20px;
+position: relative;
+overflow: hidden;
+transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+box-shadow: 0 6px 12px rgba(30, 58, 138, 0.1);
+border: 2px solid transparent;
+cursor: pointer;
+display: flex;
+flex-direction: column;
+height: 100%;
+}
+.card-item__content {
+padding: 16px;
+display: flex;
+flex-direction: column;
+gap: 12px;
+height: 100%;
+}
+.card-item__image-container {
+width: 100%;
+height: 110px;
+border-radius: 12px;
+overflow: hidden;
+position: relative;
+cursor: pointer;
+}
+.card-item__image-slide {
+width: 100%;
+height: 100%;
+background-size: cover;
+background-position: center;
+position: absolute;
+top: 0;
+left: 0;
+display: none;
+}
+.card-item__image-slide.active {
+display: block;
+}
+.card-item__text {
+display: flex;
+flex-direction: column;
+gap: 4px;
+}
+.card-item__district {
+font-size: 12px;
+color: var(--text-secondary);
+font-weight: 600;
+}
+.card-item__title {
+font-size: 16px;
+font-weight: 700;
+color: var(--text);
+line-height: 1.3;
+}
+.card-item__description {
+font-size: 13px;
+color: var(--text-secondary);
+line-height: 1.4;
+display: -webkit-box;
+-webkit-line-clamp: 2;
+-webkit-box-orient: vertical;
+overflow: hidden;
+}
+.card-item__footer {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin-top: auto;
+gap: 6px;
+}
+.card-item__price {
+font-weight: 700;
+font-size: 13px;
+color: var(--primary);
+white-space: nowrap;
+overflow: hidden;
+text-overflow: ellipsis;
+min-width: 0;
+}
+.card-item__button {
+width: 28px;
+height: 28px;
+background: var(--accent);
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+color: white;
+cursor: pointer;
+transition: all 0.3s ease;
+flex-shrink: 0;
+}
+.card-item:hover {
+transform: translateY(-6px);
+box-shadow: 0 10px 20px rgba(30, 58, 138, 0.15);
+border-color: var(--accent);
+}
+.card-item:hover .card-item__button {
+transform: scale(1.1);
+box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.3);
+}
+/* Избранное */
+.favorite-btn {
+position: absolute;
+top: 12px;
+right: 12px;
+width: 28px;
+height: 28px;
+cursor: pointer;
+z-index: 3;
+background: rgba(255, 255, 255, 0.95);
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+border: 2px solid transparent;
+}
+.favorite-btn:hover {
+transform: scale(1.15);
+border-color: var(--accent);
+}
+.favorite-btn input { display: none; }
+.favorite-btn svg {
+width: 18px;
+height: 18px;
+fill: transparent;
+stroke: var(--primary);
+stroke-width: 2;
+transition: all 0.2s ease;
+}
+.favorite-btn input:checked + svg {
+fill: var(--accent);
+stroke: var(--accent);
+}
+/* Общие стили */
+.card {
+background: var(--bg);
+padding: 20px;
+border-radius: 18px;
+margin: 18px 0;
+border: 1px solid var(--border);
+}
+/* Кнопка "Подобрать жильё" */
+.find-home-btn {
+background: transparent;
+border: 2px solid var(--primary);
+color: var(--primary);
+padding: 16px 24px;
+border-radius: 18px;
+font-family: 'Inter', sans-serif;
+font-weight: 600;
+font-size: 17px;
+cursor: pointer;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 12px;
+margin: 0 auto 32px;
+max-width: 320px;
+transition: all 0.25s ease;
+box-shadow: 0 4px 12px rgba(30, 58, 138, 0.1);
+}
+.find-home-btn:hover {
+background: rgba(30, 58, 138, 0.05);
+transform: translateY(-3px);
+box-shadow: 0 6px 16px rgba(30, 58, 138, 0.2);
+}
+.find-home-btn svg {
+width: 22px;
+height: 22px;
+stroke: currentColor;
+stroke-width: 2;
+}
+/* Баннер */
+.banner {
+text-align: center;
+margin: 32px 0;
+}
+.banner-container {
+width: 100%;
+max-width: 520px;
+border-radius: 18px;
+overflow: hidden;
+background: var(--bg);
+border: 1px solid var(--border);
+margin: 0 auto;
+position: relative;
+touch-action: pan-y;
+}
+.banner-slides {
+display: flex;
+width: 200%;
+height: 150px;
+transition: transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.banner-slide img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+.banner-text {
+margin-top: 14px;
+font-weight: 700;
+color: var(--primary);
+font-size: 18px;
+}
+.banner-dots {
+display: flex;
+justify-content: center;
+gap: 10px;
+margin-top: 16px;
+}
+.banner-dot {
+width: 8px;
+height: 8px;
+border-radius: 50%;
+background: #cbd5e1;
+cursor: pointer;
+transition: all 0.3s ease;
+}
+.banner-dot.active {
+background: var(--accent);
+transform: scale(1.3);
+}
+.section-header {
+display: flex;
+justify-content: space-between;
+align-items: center;
+margin: 28px 0 18px;
+}
+.section-title {
+font-size: 20px;
+font-weight: 700;
+color: var(--text);
+}
+/* Поиск */
+.search-box {
+margin-bottom: 24px;
+display: none;
+}
+.search-box.active {
+display: block;
+}
+.search-box input {
+width: 100%;
+padding: 14px 16px;
+border: 1px solid var(--border);
+border-radius: 14px;
+font-size: 16px;
+font-family: inherit;
+color: var(--text);
+}
+.search-box input:focus {
+outline: none;
+border-color: var(--primary);
+}
+/* Выбор района */
+.district-filter {
+display: none;
+margin-bottom: 20px;
+}
+#district-dropdown {
+display: none;
+background: var(--bg);
+border: 1px solid var(--border);
+border-radius: 12px;
+padding: 12px;
+margin-top: 8px;
+overflow-y: auto;
+}
+#district-list label {
+display: flex;
+align-items: center;
+gap: 10px;
+padding: 6px 0;
+cursor: pointer;
+}
+#district-list input[type="checkbox"] {
+width: 16px;
+height: 16px;
+}
+/* Большие категории */
+.category-card {
+background: var(--bg);
+border: 2px solid var(--primary);
+border-radius: 18px;
+padding: 24px 20px;
+text-align: center;
+font-weight: 600;
+font-size: 18px;
+color: var(--primary);
+cursor: pointer;
+transition: all 0.25s ease;
+margin-bottom: 16px;
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+min-height: 100px;
+}
+.category-card:hover {
+background: var(--primary);
+color: white;
+transform: translateY(-4px);
+box-shadow: 0 6px 16px rgba(30, 58, 138, 0.2);
+}
+.category-card svg {
+width: 32px;
+height: 32px;
+margin-bottom: 12px;
+stroke: currentColor;
+stroke-width: 2;
+}
+/* Кнопки */
+.view-all-btn,
+.btn,
+.btn-remove,
+.btn-order,
+.btn-support {
+border: none;
+border-radius: 14px;
+font-family: 'Inter', sans-serif;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.25s ease;
+display: inline-flex;
+align-items: center;
+justify-content: center;
+background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+color: white;
+box-shadow: 0 2px 6px rgba(30, 58, 138, 0.2);
+}
+.view-all-btn:hover,
+.btn:hover,
+.btn-remove:hover,
+.btn-order:hover,
+.btn-support:hover {
+transform: translateY(-2px);
+box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+}
+.view-all-btn {
+padding: 8px 18px;
+font-size: 14px;
+}
+.btn {
+padding: 10px 18px;
+font-size: 15px;
+}
+.btn-back {
+background: #F8FAFC;
+color: var(--text);
+padding: 9px 18px;
+font-size: 14px;
+border: 1px solid var(--border);
+border-radius: 14px;
+font-family: 'Inter', sans-serif;
+font-weight: 600;
+cursor: pointer;
+transition: all 0.25s ease;
+display: inline-flex;
+align-items: center;
+gap: 6px;
+}
+.btn-back:hover {
+background: #E2E8F0;
+}
+/* Сетка карточек */
+.offers-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+gap: 18px;
+width: 100%;
+}
+/* Нижняя навигация */
+.bottom-nav {
+position: fixed;
+bottom: 0;
+left: 0;
+right: 0;
+display: flex;
+justify-content: space-around;
+background: var(--bg);
+padding: 14px 0 22px;
+border-top: 1px solid var(--border);
+z-index: 1000;
+}
+.nav-btn {
+background: none;
+border: none;
+color: #94a3b8;
+font-size: 11px;
+display: flex;
+flex-direction: column;
+align-items: center;
+gap: 6px;
+font-family: 'Inter', sans-serif;
+font-weight: 500;
+cursor: pointer;
+padding: 8px 0;
+border-radius: 12px;
+transition: all 0.2s ease;
+}
+.nav-btn.active {
+color: var(--primary);
+background: rgba(30, 58, 138, 0.08);
+}
+.nav-icon {
+width: 24px;
+height: 24px;
+stroke: currentColor;
+stroke-width: 2;
+}
+/* Плавающая корзина */
+#floating-cart {
+position: fixed;
+bottom: 84px;
+right: 22px;
+width: 60px;
+height: 60px;
+background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+z-index: 10000;
+opacity: 0;
+transform: scale(0);
+transition: all 0.4s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+box-shadow: 0 4px 14px rgba(30, 58, 138, 0.35);
+}
+#floating-cart.visible {
+opacity: 1;
+transform: scale(1);
+}
+#floating-cart svg {
+fill: white;
+width: 28px;
+height: 28px;
+}
+#cart-badge {
+position: absolute;
+top: -6px;
+right: -6px;
+background: var(--accent);
+color: white;
+font-size: 11px;
+font-weight: bold;
+width: 22px;
+height: 22px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+}
+/* Детальная карточка */
+#property-detail .card {
+margin-top: 0;
+}
+.property-gallery {
+position: relative;
+width: 100%;
+height: 240px;
+border-radius: 16px;
+overflow: hidden;
+margin-bottom: 20px;
+touch-action: pan-y;
+}
+.property-gallery img {
+width: 100%;
+height: 100%;
+object-fit: cover;
+}
+.gallery-nav {
+position: absolute;
+top: 50%;
+transform: translateY(-50%);
+background: rgba(0,0,0,0.5);
+color: white;
+width: 32px;
+height: 32px;
+border-radius: 50%;
+display: flex;
+align-items: center;
+justify-content: center;
+cursor: pointer;
+z-index: 10;
+}
+.gallery-nav.prev { left: 12px; }
+.gallery-nav.next { right: 12px; }
+.gallery-dots {
+display: flex;
+justify-content: center;
+gap: 8px;
+margin-top: 12px;
+}
+.gallery-dot {
+width: 8px;
+height: 8px;
+border-radius: 50%;
+background: #cbd5e1;
+cursor: pointer;
+}
+.gallery-dot.active {
+background: var(--accent);
+}
+.property-title {
+font-size: 22px;
+font-weight: 700;
+margin-bottom: 8px;
+color: var(--text);
+}
+.property-address {
+font-size: 15px;
+color: var(--text-secondary);
+margin-bottom: 8px;
+font-style: italic;
+}
+.property-price {
+font-size: 24px;
+font-weight: 700;
+color: var(--primary);
+margin-bottom: 18px;
+}
+.property-description {
+color: var(--text);
+line-height: 1.65;
+margin-bottom: 24px;
+font-size: 15px;
+}
+.property-actions {
+display: flex;
+gap: 14px;
+}
+.property-actions button {
+flex: 1;
+}
+.empty-state {
+text-align: center;
+color: var(--text-secondary);
+padding: 36px 20px;
+font-style: italic;
+font-size: 16px;
+}
+/* Пустое состояние — ИЗБРАННОЕ */
+.empty-favorites {
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: 60px 20px;
+color: var(--text-secondary);
+}
+.empty-favorites svg {
+width: 64px;
+height: 64px;
+margin-bottom: 24px;
+stroke: var(--text-secondary);
+stroke-width: 1.5;
+fill: none;
+}
+.empty-favorites h3 {
+font-weight: 600;
+font-size: 18px;
+margin-bottom: 8px;
+color: var(--text);
+}
+.empty-favorites p {
+font-size: 15px;
+line-height: 1.5;
+}
+
+/* Пустое состояние — КОРЗИНА */
+.empty-cart {
+display: flex;
+flex-direction: column;
+align-items: center;
+justify-content: center;
+padding: 60px 20px;
+color: var(--text-secondary);
+}
+.empty-cart .cart-icon {
+position: relative;
+width: 80px;
+height: 80px;
+margin-bottom: 24px;
+}
+.empty-cart .cart-icon svg {
+width: 100%;
+height: 100%;
+stroke: var(--text-secondary);
+stroke-width: 2;
+fill: none;
+}
+.empty-cart .cart-icon .cross {
+position: absolute;
+top: 50%;
+left: 50%;
+transform: translate(-50%, -50%) rotate(45deg);
+width: 40px;
+height: 4px;
+background: var(--text-secondary);
+border-radius: 2px;
+}
+.empty-cart .cart-icon .cross::after {
+content: '';
+position: absolute;
+top: 50%;
+left: 50%;
+width: 4px;
+height: 40px;
+background: var(--text-secondary);
+border-radius: 2px;
+transform: translate(-50%, -50%);
+}
+.empty-cart h3 {
+font-weight: 600;
+font-size: 18px;
+margin-bottom: 8px;
+color: var(--text);
+}
+.empty-cart p {
+font-size: 15px;
+line-height: 1.5;
+margin-bottom: 24px;
+}
+.empty-cart .btn {
+background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+color: white;
+padding: 12px 24px;
+font-size: 16px;
+border-radius: 16px;
+font-weight: 600;
+box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2);
+}
+.empty-cart .btn:hover {
+transform: translateY(-2px);
+box-shadow: 0 6px 16px rgba(30, 58, 138, 0.3);
+}
+
+/* Поддержка — КРАСИВЫЕ КНОПКИ */
+.support-option {
+display: flex;
+align-items: center;
+gap: 12px;
+width: 100%;
+padding: 14px 16px;
+background: #f8fafc;
+border: 1px solid var(--border);
+border-radius: 14px;
+font-family: 'Inter', sans-serif;
+font-weight: 600;
+font-size: 15px;
+color: var(--primary);
+cursor: pointer;
+transition: all 0.2s ease;
+text-align: left;
+margin-bottom: 12px;
+}
+.support-option:last-child {
+margin-bottom: 0;
+}
+.support-option:hover {
+background: #eef4ff;
+border-color: var(--primary);
+transform: translateY(-1px);
+box-shadow: 0 2px 6px rgba(30, 58, 138, 0.1);
+}
+.support-option svg {
+width: 20px;
+height: 20px;
+stroke: currentColor;
+stroke-width: 2;
+flex-shrink: 0;
+}
+/* Модальное окно фото */
+.modal {
+display: none;
+position: fixed;
+top: 0; left: 0; right: 0; bottom: 0;
+background: rgba(0,0,0,0.9);
+z-index: 9999999;
+justify-content: center;
+align-items: center;
+}
+.modal img {
+max-width: 90%;
+max-height: 90%;
+object-fit: contain;
+border: 2px solid white;
+}
+/* История обращений */
+.support-history-item {
+padding: 14px 0;
+border-bottom: 1px solid var(--border);
+cursor: pointer;
+transition: background 0.2s;
+}
+.support-history-item:hover {
+background: #F8FAFC;
+border-radius: 10px;
+}
+.support-history-item:last-child {
+border-bottom: none;
+}
+.checkmark-animation {
+width: 64px;
+height: 64px;
+margin: 24px auto;
+position: relative;
+}
+.checkmark-animation svg {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+}
+.checkmark-animation .circle {
+stroke: var(--primary);
+stroke-width: 4;
+fill: none;
+stroke-dasharray: 166;
+stroke-dashoffset: 166;
+animation: drawCircle 0.6s ease-out forwards;
+}
+.checkmark-animation .check {
+stroke: white;
+stroke-width: 4;
+stroke-linecap: round;
+stroke-dasharray: 32;
+stroke-dashoffset: 32;
+animation: drawCheck 0.3s ease-out 0.6s forwards;
+}
+@keyframes drawCircle { to { stroke-dashoffset: 0; } }
+@keyframes drawCheck { to { stroke-dashoffset: 0; } }
+</style>
+</head>
+<body>
+<!-- SPLASH -->
+<div id="splash">
+<img src="https://i.ibb.co/xKZ1hC1j/Dt-L73-Ny-XFi8-Gj0c-Np5-Zr-ZQni2c-QXIXMubb9j-U-kj-Io-Z9q-Nj-ukw-RQ3f4-Bb-Bp-CWLox-B4pm-Fso-Gh-Hz-Go-Xqb.jpg" class="splash-logo" alt="Логотип">
+<div class="splash-text">Уже строим <span class="hammer-anim">🔨</span></div>
+</div>
+
+<!-- ГЛАВНАЯ -->
+<div id="home" class="page">
+<button class="find-home-btn" onclick="show('catalog')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+<polyline points="9 22 9 12 15 12 15 22"/>
+</svg>
+Подобрать жильё
+</button>
+<div class="banner">
+<div class="banner-container" id="banner-container">
+<div class="banner-slides" id="bannerSlides"></div>
+</div>
+<div class="banner-dots" id="bannerDots"></div>
+<div class="banner-text">🔥 Только этой неделей — особые условия!</div>
+</div>
+<div class="section-header">
+<div class="section-title">🔥 Hot offers</div>
+<button class="view-all-btn" onclick="show('catalog')">Смотреть всё</button>
+</div>
+<div class="offers-grid" id="hotOffers"></div>
+<div class="section-header">
+<div class="section-title">🏆 Хиты продаж</div>
+<button class="view-all-btn" onclick="show('catalog')">Смотреть всё</button>
+</div>
+<div class="offers-grid" id="hitOffers"></div>
+</div>
+
+<!-- КАТАЛОГ -->
+<div id="catalog" class="page">
+<button id="catalog-back-btn" class="btn-back" style="margin-bottom:16px;display:none;" onclick="catalogGoBack()">← Назад</button>
+<div class="search-box" id="catalog-search-box">
+<input type="text" id="catalog-search" placeholder="Поиск по объектам..." oninput="filterCatalog()">
+</div>
+<div class="district-filter" id="district-filter" style="display:none;">
+<button class="btn" style="width:100%; padding:10px; font-size:14px;" onclick="toggleDistrictDropdown()">
+🗺️ Выбрать район
+</button>
+<div id="district-dropdown" style="display:none;">
+<div id="district-list"></div>
+<button class="view-all-btn" style="width:100%; margin-top:12px;" onclick="applyDistrictFilter()">Применить</button>
+</div>
+</div>
+<div id="step-market" style="display:block;">
+<div class="category-card" onclick="selectMarket('all')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<rect x="3" y="3" width="7" height="7" rx="1"/>
+<rect x="14" y="3" width="7" height="7" rx="1"/>
+<rect x="3" y="14" width="7" height="7" rx="1"/>
+<rect x="14" y="14" width="7" height="7" rx="1"/>
+</svg>
+Все объекты
+</div>
+<div class="category-card" onclick="selectMarket('primary')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M12 2L2 7l10 5 10-5-10-5z"/>
+<path d="M2 17l10 5 10-5"/>
+<path d="M2 12l10 5 10-5"/>
+</svg>
+Новые объекты
+</div>
+<div class="category-card" onclick="selectMarket('secondary')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+<polyline points="3.27 6.96 12 12 20.73 6.96"/>
+<line x1="12" y1="22" x2="12" y2="12"/>
+</svg>
+Вторичные объекты
+</div>
+</div>
+<div id="step-type" style="display:none;"></div>
+<div id="step-jk" style="display:none;"></div>
+<div id="catalog-results" class="offers-grid" style="display:none;"></div>
+</div>
+
+<!-- ИЗБРАННОЕ -->
+<div id="favorites" class="page">
+<button class="btn-back" onclick="show('home')">← Назад</button>
+<div id="fav-list">
+  <!-- будет заменено на empty-favorites или карточки -->
+</div>
+</div>
+
+<!-- КОРЗИНА -->
+<div id="cart" class="page">
+<button class="btn-back" onclick="show('home')">← Назад</button>
+<div id="cart-items">
+  <!-- будет заменено на empty-cart или карточки -->
+</div>
+</div>
+
+<!-- ПРОФИЛЬ -->
+<div id="profile" class="page">
+<div class="card" style="text-align: center; padding: 28px;">
+<img id="user-photo" src="https://upload.wikimedia.org/wikipedia/commons/8/89/Portrait_Placeholder.png"
+alt="Аватар" style="width: 92px; height: 92px; border-radius: 50%; margin-bottom: 20px; border: 2px solid var(--border);">
+<div id="user-info">Уже строим...</div>
+</div>
+<div class="card">
+<h3 style="font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:10px;">🛟 Поддержка</h3>
+<div class="support-option" onclick="window.open('https://t.me/novikela', '_blank')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+</svg>
+Написать в поддержку
+</div>
+<div class="support-option" onclick="window.location.href='tel:89376956362'">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M15.05 5A5 5 0 0119 8.95M15.05 1A9 9 0 0123 8.94m-2.05 8a9 9 0 01-18 0m18 0a9 9 0 00-18 0"/>
+</svg>
+Позвонить
+</div>
+</div>
+<div class="card">
+<h3 style="font-weight:700;margin-bottom:16px;">📨 История обращений</h3>
+<div id="support-history"><div class="empty-state">Обращений пока нет</div></div>
+</div>
+<div class="card">
+<h3 style="font-weight:700;margin-bottom:16px;">📦 История заказов</h3>
+<div id="orders-history"><div class="empty-state">Заказов пока нет</div></div>
+</div>
+</div>
+
+<!-- ДЕТАЛЬНАЯ КАРТОЧКА -->
+<div id="property-detail" class="page">
+<button class="btn-back" onclick="show('catalog')">← Назад</button>
+<div class="card">
+<div class="property-gallery" id="detail-gallery">
+<!-- Фото будет вставлено динамически -->
+</div>
+<div class="gallery-dots" id="detail-dots"></div>
+<h1 id="detail-title" class="property-title"></h1>
+<div id="detail-address" class="property-address"></div>
+<div id="detail-price" class="property-price"></div>
+<div id="detail-description" class="property-description"></div>
+<div class="property-actions">
+<button id="detail-fav-btn" class="btn" onclick="toggleFavoriteDetail()"></button>
+<button class="btn" onclick="toggleCart(currentDetailId)">
+<span id="detail-cart-text">🛒 В корзину</span>
+</button>
+</div>
+</div>
+</div>
+
+<!-- МОДАЛЬНОЕ ОКНО ФОТО -->
+<div id="photo-modal" class="modal" onclick="this.style.display='none'">
+<img id="modal-img" src="" alt="Фото">
+</div>
+
+<!-- НИЖНЯЯ НАВИГАЦИЯ -->
+<div class="bottom-nav">
+<button class="nav-btn" onclick="show('home')">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+<polyline points="9 22 9 12 15 12 15 22"/>
+</svg>
+<span>Главная</span>
+</button>
+<button class="nav-btn" onclick="show('catalog')">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+<rect x="3" y="3" width="7" height="7" rx="1"/>
+<rect x="14" y="3" width="7" height="7" rx="1"/>
+<rect x="3" y="14" width="7" height="7" rx="1"/>
+<rect x="14" y="14" width="7" height="7" rx="1"/>
+</svg>
+<span>Каталог</span>
+</button>
+<button class="nav-btn" onclick="show('favorites')">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+</svg>
+<span>Избранное</span>
+</button>
+<button class="nav-btn" onclick="show('profile')">
+<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+<path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
+<circle cx="12" cy="7" r="4"/>
+</svg>
+<span>Профиль</span>
+</button>
+</div>
+
+<div id="floating-cart" onclick="show('cart')">
+<svg viewBox="0 0 24 24">
+<path d="M9 11H7l-1 6h12l-1-6h-2M9 11V6a2 2 0 012-2h2a2 2 0 012 2v5m-6 0h6"/>
+</svg>
+<div id="cart-badge">0</div>
+</div>
+
+<script>
+// === ДАННЫЕ С ФОТОГРАФИЯМИ ===
+const ALL_ADS = [
+{
+id: 1, title: "Новостройка у метро", price: "от 12 300 000 ₽", market: "primary", type: "apartment", jk: "Горизонт",
+address: "ул. Ленина, 42, Москва",
+description: "Современная 2-комнатная квартира в новом ЖК «Горизонт». Высота потолков — 2.8 м, панорамные окна, отделка премиум-класса.",
+images: [
+"https://i.ibb.co/ds3qdSRp/ass-AZpmsu-Aq-Kp9-Gl-YLg-Uy-O-nb-Um3-Frkf-Xa-TQpl-Fam-Ka-Btc9-CGPqwj-Gh-Utve0f-Haje6lr-Bk0-GDJL6-Zu-Fg3uy.jpg",
+"https://i.ibb.co/rSvtVFY/j63jvsdndcc71zqold2r6jhwg9czqdx9.jpg",
+"https://i.ibb.co/PkZNfb5/i.webp"
+]
+},
+{
+id: 2, title: "Коттедж в новостройке", price: "от 28 000 000 ₽", market: "primary", type: "house", jk: "Зелёный берег",
+address: "пос. Зелёный, ул. Сосновая, 7",
+description: "Элитный коттедж в закрытом поселке. Площадь участка — 8 соток, дом — 220 м².",
+images: [
+"https://i.ibb.co/PkZNfb5/i.webp",
+"https://i.ibb.co/rSvtVFY/j63jvsdndcc71zqold2r6jhwg9czqdx9.jpg"
+]
+},
+{
+id: 3, title: "2-комн. квартира в центре", price: "от 9 500 000 ₽", market: "secondary", type: "apartment",
+address: "ул. Тверская, 15, Санкт-Петербург",
+description: "Уютная квартира в историческом районе. После евроремонта, кирпичный дом, тихий двор.",
+images: [
+"https://i.ibb.co/rSvtVFY/j63jvsdndcc71zqold2r6jhwg9czqdx9.jpg"
+]
+},
+{
+id: 4, title: "Частный дом в районе", price: "от 18 000 000 ₽", market: "secondary", type: "house",
+address: "д. Ивановка, ул. Центральная, 23",
+description: "Деревянный дом с мансардой, 150 м² на участке 6 соток. Есть баня, колодец и плодовый сад.",
+images: [
+"https://i.ibb.co/PkZNfb5/i.webp"
+]
+},
+{
+id: 5, title: "Элитная квартира", price: "от 22 000 000 ₽", market: "primary", type: "apartment", jk: "Невский",
+address: "пр. Невский, 88, Санкт-Петербург",
+description: "Пентхаус с террасой в престижном районе. Вид на реку, консьерж, подземный паркинг.",
+images: [
+"https://i.ibb.co/ds3qdSRp/ass-AZpmsu-Aq-Kp9-Gl-YLg-Uy-O-nb-Um3-Frkf-Xa-TQpl-Fam-Ka-Btc9-CGPqwj-Gh-Utve0f-Haje6lr-Bk0-GDJL6-Zu-Fg3uy.jpg",
+"https://i.ibb.co/PkZNfb5/i.webp"
+]
+},
+{
+id: 6, title: "Загородный дом", price: "от 35 000 000 ₽", market: "secondary", type: "house",
+address: "пос. Озерный, ул. Береговая, 12",
+description: "Каменный дом в эко-поселке. 300 м², бассейн, сауна, солнечные панели.",
+images: [
+"https://i.ibb.co/rSvtVFY/j63jvsdndcc71zqold2r6jhwg9czqdx9.jpg",
+"https://i.ibb.co/ds3qdSRp/ass-AZpmsu-Aq-Kp9-Gl-YLg-Uy-O-nb-Um3-Frkf-Xa-TQpl-Fam-Ka-Btc9-CGPqwj-Gh-Utve0f-Haje6lr-Bk0-GDJL6-Zu-Fg3uy.jpg"
+]
+}
+];
+
+const BANNER_IMAGES = [
+"https://i.ibb.co/rSvtVFY/j63jvsdndcc71zqold2r6jhwg9czqdx9.jpg",
+"https://i.ibb.co/PkZNfb5/i.webp"
+];
+
+let favorites = JSON.parse(localStorage.getItem('fav') || '[]');
+let cart = JSON.parse(localStorage.getItem('cart') || '[]');
+let currentSlide = 0;
+let slideInterval;
+let currentDetailId = null;
+let detailCurrentImage = 0;
+let selectedMarket = null;
+let selectedType = null;
+let selectedJK = null;
+let catalogStep = 'market';
+let selectedDistricts = JSON.parse(localStorage.getItem('selectedDistricts') || '[]');
+let isSwiping = false;
+
+function detectSwipe(element, onSwipeLeft, onSwipeRight) {
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  element.addEventListener('touchstart', e => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+
+  element.addEventListener('touchend', e => {
+    touchEndX = e.changedTouches[0].screenX;
+    const diff = touchStartX - touchEndX;
+    const threshold = 50;
+
+    if (Math.abs(diff) > threshold) {
+      isSwiping = true;
+      if (diff > 0) {
+        onSwipeLeft();
+      } else {
+        onSwipeRight();
+      }
+    }
+  }, { passive: true });
+}
+
+document.addEventListener('click', function(e) {
+  if (e.target.closest('.card-item') && !isSwiping) {
+    const card = e.target.closest('.card-item');
+    const id = parseInt(card.querySelector('.card-item__image-container').dataset.id);
+    viewProperty(id);
+  }
+  isSwiping = false;
+});
+
+function show(pageId) {
+document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+document.getElementById(pageId).classList.add('active');
+document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+const buttons = document.querySelectorAll('.nav-btn');
+for (let btn of buttons) {
+if (btn.getAttribute('onclick')?.includes(`show('${pageId}')`)) {
+btn.classList.add('active');
+break;
+}
+}
+if (pageId === 'catalog') {
+goToMarketStep();
+}
+if (pageId === 'favorites') renderFavorites();
+if (pageId === 'cart') renderCart();
+if (pageId === 'profile') {
+renderSupportHistory();
+}
+}
+
+function hideSearch() {
+document.getElementById('catalog-search-box').classList.remove('active');
+document.getElementById('catalog-search').value = '';
+document.getElementById('district-filter').style.display = 'none';
+}
+
+function loadDistricts() {
+let filtered = ALL_ADS;
+if (selectedMarket === 'primary' || selectedMarket === 'secondary') {
+filtered = filtered.filter(a => a.market === selectedMarket);
+}
+if (selectedType) filtered = filtered.filter(a => a.type === selectedType);
+if (selectedJK) filtered = filtered.filter(a => a.jk === selectedJK);
+const districts = [...new Set(filtered.map(ad => ad.address.split(',')[0].trim()))].sort();
+const list = document.getElementById('district-list');
+list.innerHTML = districts.map(district => `
+<label>
+<input type="checkbox" value="${district}" ${selectedDistricts.includes(district) ? 'checked' : ''}>
+<span>${district}</span>
+</label>
+`).join('');
+}
+
+function toggleDistrictDropdown() {
+const dropdown = document.getElementById('district-dropdown');
+dropdown.style.display = dropdown.style.display === 'block' ? 'none' : 'block';
+}
+
+function applyDistrictFilter() {
+selectedDistricts = [];
+document.querySelectorAll('#district-list input[type="checkbox"]:checked').forEach(cb => {
+selectedDistricts.push(cb.value);
+});
+localStorage.setItem('selectedDistricts', JSON.stringify(selectedDistricts));
+toggleDistrictDropdown();
+filterCatalog();
+}
+
+function selectMarket(market) {
+selectedMarket = market;
+selectedType = null;
+selectedJK = null;
+document.getElementById('step-market').style.display = 'none';
+document.getElementById('step-type').innerHTML = '';
+document.getElementById('step-type').style.display = 'none';
+document.getElementById('step-jk').innerHTML = '';
+document.getElementById('step-jk').style.display = 'none';
+document.getElementById('catalog-results').style.display = 'none';
+
+document.getElementById('catalog-back-btn').style.display = 'inline-flex';
+
+if (market === 'all') {
+catalogStep = 'results';
+showSearch();
+filterCatalog();
+document.getElementById('catalog-back-btn').textContent = '← Назад к выбору';
+} else {
+catalogStep = 'type';
+
+document.getElementById('step-type').innerHTML = `
+<div class="category-card" onclick="selectType('apartment')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M3 3h18v18H3V3z"/>
+<path d="M7 7h2v2H7V7zm4 0h2v2h-2V7zm4 0h2v2h-2V7zm-8 4h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2zm-8 4h2v2H7v-2zm4 0h2v2h-2v-2zm4 0h2v2h-2v-2z"/>
+</svg>
+Квартиры
+</div>
+<div class="category-card" onclick="selectType('house')">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+<path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+<polyline points="9 22 9 12 15 12 15 22"/>
+</svg>
+Дома
+</div>
+`;
+document.getElementById('step-type').style.display = 'block';
+hideSearch();
+document.getElementById('catalog-back-btn').textContent = '← Назад к выбору';
+}
+}
+
+function selectType(type) {
+selectedType = type;
+selectedJK = null;
+catalogStep = 'type';
+document.getElementById('step-type').style.display = 'none';
+document.getElementById('step-jk').innerHTML = '';
+document.getElementById('step-jk').style.display = 'none';
+document.getElementById('catalog-results').style.display = 'none';
+if (selectedMarket === 'primary') {
+const jks = [...new Set(ALL_ADS
+.filter(a => a.market === 'primary' && a.type === type && a.jk)
+.map(a => a.jk)
+)];
+if (jks.length > 0) {
+document.getElementById('step-jk').innerHTML = jks.map(jk => `
+<div class="category-card" onclick="selectJK('${jk}')">${jk}</div>
+`).join('');
+document.getElementById('step-jk').style.display = 'block';
+hideSearch();
+return;
+}
+}
+catalogStep = 'results';
+showSearch();
+filterCatalog();
+}
+
+function selectJK(jk) {
+selectedJK = jk;
+catalogStep = 'results';
+showSearch();
+filterCatalog();
+}
+
+function catalogGoBack() {
+if (catalogStep === 'results') {
+if (selectedJK) {
+selectedJK = null;
+catalogStep = 'jk';
+document.getElementById('step-jk').style.display = 'block';
+document.getElementById('catalog-results').style.display = 'none';
+hideSearch();
+} else if (selectedType) {
+selectedType = null;
+catalogStep = 'type';
+document.getElementById('step-type').style.display = 'block';
+document.getElementById('step-jk').style.display = 'none';
+document.getElementById('catalog-results').style.display = 'none';
+hideSearch();
+} else {
+goToMarketStep();
+}
+} else if (catalogStep === 'jk') {
+selectedJK = null;
+catalogStep = 'type';
+document.getElementById('step-type').style.display = 'block';
+document.getElementById('step-jk').style.display = 'none';
+hideSearch();
+} else if (catalogStep === 'type') {
+selectedType = null;
+goToMarketStep();
+}
+}
+
+function goToMarketStep() {
+selectedMarket = null;
+selectedType = null;
+selectedJK = null;
+catalogStep = 'market';
+document.getElementById('step-market').style.display = 'block';
+document.getElementById('step-type').style.display = 'none';
+document.getElementById('step-jk').style.display = 'none';
+document.getElementById('catalog-results').style.display = 'none';
+document.getElementById('catalog-back-btn').style.display = 'none';
+hideSearch();
+}
+
+function showSearch() {
+document.getElementById('catalog-search-box').classList.add('active');
+if (catalogStep === 'results') {
+document.getElementById('district-filter').style.display = 'block';
+loadDistricts();
+} else {
+document.getElementById('district-filter').style.display = 'none';
+}
+}
+
+function filterCatalog() {
+let query = (document.getElementById('catalog-search')?.value || '').trim().toLowerCase();
+let filtered = ALL_ADS;
+if (selectedMarket === 'primary' || selectedMarket === 'secondary') {
+filtered = filtered.filter(a => a.market === selectedMarket);
+}
+if (selectedType) filtered = filtered.filter(a => a.type === selectedType);
+if (selectedJK) filtered = filtered.filter(a => a.jk === selectedJK);
+if (selectedDistricts.length > 0) {
+filtered = filtered.filter(a => selectedDistricts.includes(a.address.split(',')[0].trim()));
+}
+if (query) {
+filtered = filtered.filter(a =>
+a.title.toLowerCase().includes(query) ||
+a.address.toLowerCase().includes(query) ||
+(a.jk && a.jk.toLowerCase().includes(query)) ||
+a.description.toLowerCase().includes(query)
+);
+}
+renderCatalogResults(filtered);
+}
+
+function renderCatalogResults(items) {
+document.getElementById('step-market').style.display = 'none';
+document.getElementById('step-type').style.display = 'none';
+document.getElementById('step-jk').style.display = 'none';
+const container = document.getElementById('catalog-results');
+container.style.display = 'grid';
+if (items.length === 0) {
+container.innerHTML = '<div class="empty-state">Ничего не найдено</div>';
+} else {
+container.innerHTML = items.map(ad => `
+<div class="card-item">
+<div class="card-item__content">
+<label class="favorite-btn" onclick="event.stopPropagation();">
+<input type="checkbox" ${favorites.includes(ad.id) ? 'checked' : ''} onchange="toggleFavorite(${ad.id})">
+<svg viewBox="0 0 24 24">
+<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+</svg>
+</label>
+<div class="card-item__image-container" data-id="${ad.id}">
+${ad.images.map((img, i) =>
+`<div class="card-item__image-slide" style="background-image: url('${img}'); ${i === 0 ? 'display:block;' : ''}"></div>`
+).join('')}
+</div>
+<div class="card-item__text">
+<p class="card-item__district">${ad.address.split(',')[0].trim()}</p>
+<p class="card-item__title">${ad.title}</p>
+<p class="card-item__description">${ad.description}</p>
+</div>
+<div class="card-item__footer">
+<div class="card-item__price">${ad.price}</div>
+<div class="card-item__button" onclick="event.stopPropagation(); toggleCart(${ad.id})">
+${cart.includes(ad.id) ? `
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+<path d="M18 6L6 18M6 6l12 12"/>
+</svg>
+` : `
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+<path d="M12 4v16m8-8H4"/>
+</svg>
+`}
+</div>
+</div>
+</div>
+</div>
+`).join('');
+}
+
+container.querySelectorAll('.card-item__image-container').forEach(containerEl => {
+const adId = parseInt(containerEl.dataset.id);
+const ad = ALL_ADS.find(a => a.id === adId);
+let current = 0;
+
+function showImage(index) {
+containerEl.querySelectorAll('.card-item__image-slide').forEach((slide, i) => {
+slide.style.display = i === index ? 'block' : 'none';
+});
+}
+
+detectSwipe(containerEl, () => {
+current = (current + 1) % ad.images.length;
+showImage(current);
+}, () => {
+current = (current - 1 + ad.images.length) % ad.images.length;
+showImage(current);
+});
+});
+}
+
+function updateCartUI() {
+const count = cart.length;
+document.getElementById('cart-badge').textContent = count;
+document.getElementById('floating-cart').classList.toggle('visible', count > 0);
+}
+
+function toggleCart(id) {
+const index = cart.indexOf(id);
+if (index === -1) cart.push(id);
+else cart.splice(index, 1);
+localStorage.setItem('cart', JSON.stringify(cart));
+updateCartUI();
+renderHomePreviews();
+renderFavorites();
+renderCart();
+if (currentDetailId === id) {
+document.getElementById('detail-cart-text').textContent = cart.includes(id) ? '🗑️ Удалить из корзины' : '🛒 В корзину';
+}
+}
+
+function toggleFavorite(id) {
+const index = favorites.indexOf(id);
+if (index === -1) favorites.push(id);
+else favorites.splice(index, 1);
+localStorage.setItem('fav', JSON.stringify(favorites));
+renderHomePreviews();
+renderFavorites();
+}
+
+function toggleFavoriteDetail() {
+toggleFavorite(currentDetailId);
+const isChecked = favorites.includes(currentDetailId);
+document.getElementById('detail-fav-btn').textContent = isChecked ? '❤️ В избранном' : '🤍 В избранное';
+}
+
+function viewProperty(id) {
+const ad = ALL_ADS.find(a => a.id === id);
+if (!ad) return;
+currentDetailId = id;
+detailCurrentImage = 0;
+
+const gallery = document.getElementById('detail-gallery');
+gallery.innerHTML = `
+<img src="${ad.images[0]}" alt="Фото 1" onclick="openModal('${ad.images[0]}')">
+<div class="gallery-nav prev" onclick="changeDetailImage(-1)">‹</div>
+<div class="gallery-nav next" onclick="changeDetailImage(1)">›</div>
+`;
+
+const dotsContainer = document.getElementById('detail-dots');
+dotsContainer.innerHTML = ad.images.map((_, i) =>
+`<div class="gallery-dot ${i === 0 ? 'active' : ''}" onclick="setDetailImage(${i})"></div>`
+).join('');
+
+document.getElementById('detail-title').textContent = ad.title;
+const district = ad.address.split(',')[0].trim();
+document.getElementById('detail-address').innerHTML = `<strong>${district}</strong><br>${ad.address}`;
+document.getElementById('detail-price').textContent = ad.price;
+document.getElementById('detail-description').textContent = ad.description;
+
+const inCart = cart.includes(id);
+const isFav = favorites.includes(id);
+document.getElementById('detail-cart-text').textContent = inCart ? '🗑️ Удалить из корзины' : '🛒 В корзину';
+document.getElementById('detail-fav-btn').textContent = isFav ? '❤️ В избранном' : '🤍 В избранное';
+
+detectSwipe(gallery, () => {
+changeDetailImage(1);
+}, () => {
+changeDetailImage(-1);
+});
+
+show('property-detail');
+}
+
+function changeDetailImage(direction) {
+const ad = ALL_ADS.find(a => a.id === currentDetailId);
+if (!ad) return;
+detailCurrentImage = (detailCurrentImage + direction + ad.images.length) % ad.images.length;
+updateDetailGallery(ad);
+}
+
+function setDetailImage(index) {
+detailCurrentImage = index;
+const ad = ALL_ADS.find(a => a.id === currentDetailId);
+if (ad) updateDetailGallery(ad);
+}
+
+function updateDetailGallery(ad) {
+document.getElementById('detail-gallery').querySelector('img').src = ad.images[detailCurrentImage];
+document.querySelectorAll('.gallery-dot').forEach((dot, i) => {
+dot.classList.toggle('active', i === detailCurrentImage);
+});
+}
+
+function openModal(src) {
+document.getElementById('modal-img').src = src;
+document.getElementById('photo-modal').style.display = 'flex';
+}
+
+function renderCards(container, items) {
+container.innerHTML = items.map(ad => `
+<div class="card-item">
+<div class="card-item__content">
+<label class="favorite-btn" onclick="event.stopPropagation();">
+<input type="checkbox" ${favorites.includes(ad.id) ? 'checked' : ''} onchange="toggleFavorite(${ad.id})">
+<svg viewBox="0 0 24 24">
+<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+</svg>
+</label>
+<div class="card-item__image-container" data-id="${ad.id}">
+${ad.images.map((img, i) =>
+`<div class="card-item__image-slide" style="background-image: url('${img}'); ${i === 0 ? 'display:block;' : ''}"></div>`
+).join('')}
+</div>
+<div class="card-item__text">
+<p class="card-item__district">${ad.address.split(',')[0].trim()}</p>
+<p class="card-item__title">${ad.title}</p>
+<p class="card-item__description">${ad.description}</p>
+</div>
+<div class="card-item__footer">
+<div class="card-item__price">${ad.price}</div>
+<div class="card-item__button" onclick="event.stopPropagation(); toggleCart(${ad.id})">
+${cart.includes(ad.id) ? `
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+<path d="M18 6L6 18M6 6l12 12"/>
+</svg>
+` : `
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+<path d="M12 4v16m8-8H4"/>
+</svg>
+`}
+</div>
+</div>
+</div>
+</div>
+`).join('');
+
+container.querySelectorAll('.card-item__image-container').forEach(containerEl => {
+const adId = parseInt(containerEl.dataset.id);
+const ad = ALL_ADS.find(a => a.id === adId);
+let current = 0;
+
+function showImage(index) {
+containerEl.querySelectorAll('.card-item__image-slide').forEach((slide, i) => {
+slide.style.display = i === index ? 'block' : 'none';
+});
+}
+
+detectSwipe(containerEl, () => {
+current = (current + 1) % ad.images.length;
+showImage(current);
+}, () => {
+current = (current - 1 + ad.images.length) % ad.images.length;
+showImage(current);
+});
+});
+}
+
+function renderHomePreviews() {
+const hotEl = document.getElementById('hotOffers');
+const hitEl = document.getElementById('hitOffers');
+renderCards(hotEl, ALL_ADS.slice(0, 2));
+renderCards(hitEl, ALL_ADS.slice(2, 4));
+}
+
+function renderFavorites() {
+const list = document.getElementById('fav-list');
+const items = favorites.map(id => ALL_ADS.find(ad => ad.id === id)).filter(Boolean);
+if (items.length === 0) {
+list.innerHTML = `
+<div class="empty-favorites">
+<svg viewBox="0 0 24 24">
+<path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/>
+</svg>
+<h3>Нет понравившихся объектов</h3>
+<p>Добавьте объекты в избранное, чтобы быстро к ним вернуться</p>
+</div>
+`;
+} else {
+renderCards(list, items);
+}
+}
+
+function renderCart() {
+const container = document.getElementById('cart-items');
+if (cart.length === 0) {
+container.innerHTML = `
+<div class="empty-cart">
+<div class="cart-icon">
+<svg viewBox="0 0 24 24">
+<path d="M9 11H7l-1 6h12l-1-6h-2M9 11V6a2 2 0 012-2h2a2 2 0 012 2v5m-6 0h6"/>
+</svg>
+<div class="cross"></div>
+</div>
+<h3>Здесь пока пусто</h3>
+<p>Добавьте объекты в корзину, чтобы оформить заказ</p>
+<button class="btn" onclick="show('catalog')">Перейти в каталог</button>
+</div>
+`;
+} else {
+const items = cart.map(id => ALL_ADS.find(ad => ad.id === id)).filter(Boolean);
+container.innerHTML = items.map(item => `
+<div class="card-item">
+<div class="card-item__content">
+<div class="card-item__image-container" data-id="${item.id}">
+${item.images.map((img, i) =>
+`<div class="card-item__image-slide" style="background-image: url('${img}'); ${i === 0 ? 'display:block;' : ''}"></div>`
+).join('')}
+</div>
+<div class="card-item__text">
+<p class="card-item__district">${item.address.split(',')[0].trim()}</p>
+<p class="card-item__title">${item.title}</p>
+<p class="card-item__description">${item.price}</p>
+</div>
+<div class="card-item__footer">
+<div class="card-item__price">${item.price}</div>
+<div class="card-item__button" onclick="event.stopPropagation(); toggleCart(${item.id})">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+<path d="M18 6L6 18M6 6l12 12"/>
+</svg>
+</div>
+</div>
+</div>
+</div>
+`).join('');
+
+container.querySelectorAll('.card-item__image-container').forEach(containerEl => {
+const adId = parseInt(containerEl.dataset.id);
+const ad = ALL_ADS.find(a => a.id === adId);
+let current = 0;
+
+function showImage(index) {
+containerEl.querySelectorAll('.card-item__image-slide').forEach((slide, i) => {
+slide.style.display = i === index ? 'block' : 'none';
+});
+}
+
+detectSwipe(containerEl, () => {
+current = (current + 1) % ad.images.length;
+showImage(current);
+}, () => {
+current = (current - 1 + ad.images.length) % ad.images.length;
+showImage(current);
+});
+});
+}
+}
+
+function placeOrder() {
+if (cart.length === 0) return;
+alert(`Заказ оформлен!
+Объекты: ${cart.map(id => ALL_ADS.find(a => a.id === id)?.title).join(', ')}`);
+}
+
+function renderSupportHistory() {
+const container = document.getElementById('support-history');
+const tickets = JSON.parse(localStorage.getItem('supportTickets') || '[]');
+if (tickets.length === 0) {
+container.innerHTML = '<div class="empty-state">Обращений пока нет</div>';
+return;
+}
+container.innerHTML = tickets.map(ticket => `
+<div class="support-history-item" onclick="viewSupportDetail(${ticket.id})">
+<strong>${ticket.fio}</strong><br>
+<span style="color:var(--primary);font-size:14px;">${ticket.status}</span><br>
+<span class="history-date">${ticket.date}</span>
+</div>
+`).join('');
+}
+
+function initTelegram() {
+try {
+const WebApp = window.Telegram.WebApp;
+WebApp.expand();
+WebApp.ready();
+const user = WebApp.initDataUnsafe?.user;
+if (user) {
+document.getElementById('user-info').innerHTML = `
+<strong>${user.first_name || ''} ${user.last_name || ''}</strong><br>
+<span style="color:var(--text-secondary);">@${user.username || '—'}</span><br>
+<span style="color:var(--text-secondary);font-size:13px;">ID: ${user.id}</span>
+`;
+if (user.photo_url) document.getElementById('user-photo').src = user.photo_url;
+} else {
+document.getElementById('user-info').textContent = 'Не запущено из Telegram';
+}
+} catch (e) {
+document.getElementById('user-info').textContent = 'Режим разработки';
+}
+}
+
+function safeStartApp() {
+try {
+initTelegram();
+renderHomePreviews();
+initBannerSlider();
+updateCartUI();
+setTimeout(() => {
+const splash = document.getElementById('splash');
+if (splash) {
+splash.style.opacity = '0';
+setTimeout(() => {
+if (splash.parentNode) splash.remove();
+}, 600);
+}
+show('home');
+}, 2000);
+} catch (e) {
+console.error('Ошибка при запуске:', e);
+setTimeout(() => {
+const splash = document.getElementById('splash');
+if (splash && splash.parentNode) splash.remove();
+show('home');
+}, 3000);
+}
+}
+
+function initBannerSlider() {
+const slidesContainer = document.getElementById('bannerSlides');
+const dotsContainer = document.getElementById('bannerDots');
+slidesContainer.innerHTML = BANNER_IMAGES.map((src, index) => `
+<div class="banner-slide">
+<img src="${src}" alt="Баннер ${index + 1}" loading="lazy" decoding="async" onerror="this.parentElement.style.backgroundColor='#f1f5f9'; this.style.display='none';">
+</div>
+`).join('');
+dotsContainer.innerHTML = BANNER_IMAGES.map((_, i) => `<div class="banner-dot" data-index="${i}"></div>`).join('');
+updateBanner();
+dotsContainer.querySelectorAll('.banner-dot').forEach(dot => {
+dot.addEventListener('click', () => {
+currentSlide = parseInt(dot.getAttribute('data-index'));
+updateBanner();
+resetInterval();
+});
+});
+
+const bannerContainer = document.getElementById('banner-container');
+detectSwipe(bannerContainer, () => {
+nextSlide();
+}, () => {
+currentSlide = (currentSlide - 1 + BANNER_IMAGES.length) % BANNER_IMAGES.length;
+updateBanner();
+resetInterval();
+});
+
+startAutoSlide();
+}
+
+function updateBanner() {
+const slidesContainer = document.getElementById('bannerSlides');
+const dots = document.querySelectorAll('.banner-dot');
+slidesContainer.style.transform = `translateX(${-currentSlide * 50}%)`;
+dots.forEach((dot, i) => dot.classList.toggle('active', i === currentSlide));
+}
+
+function nextSlide() {
+currentSlide = (currentSlide + 1) % BANNER_IMAGES.length;
+updateBanner();
+}
+
+function startAutoSlide() {
+clearInterval(slideInterval);
+slideInterval = setInterval(nextSlide, 3500);
+}
+
+function resetInterval() {
+clearInterval(slideInterval);
+startAutoSlide();
+}
+
+if (document.readyState === 'loading') {
+document.addEventListener('DOMContentLoaded', safeStartApp);
+} else {
+safeStartApp();
+}
+
+document.addEventListener('keydown', function(e) {
+if (e.key === 'Escape') {
+document.getElementById('photo-modal').style.display = 'none';
+}
+});
+</script>
+</body>
+</html>
